@@ -1,3 +1,4 @@
+\
 <!DOCTYPE html>
 <html lang="en">
 
@@ -17,12 +18,22 @@
             margin: auto;
             border: 2px solid white;
         }
+
+        #startGame {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
 <body>
     <h1>Multiplayer Squash Game</h1>
     <canvas id="squashGame" width="800" height="500"></canvas>
+    <button id="startGame">Start Game</button>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
 </body>
 
