@@ -4,25 +4,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Squash Game</title>
+    <title>Squash Game - Turn-Based</title>
     <style>
         body {
             text-align: center;
             background: black;
             color: white;
+            font-family: Arial, sans-serif;
         }
 
         canvas {
             display: block;
-            margin: auto;
+            margin: 20px auto;
             border: 2px solid white;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #serveBtn {
+            display: none;
+            background: #f39c12;
+        }
+
+        .instructions {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #222;
+            border-radius: 5px;
+            text-align: left;
         }
     </style>
 </head>
 
 <body>
-    <h1>Multiplayer Squash-Game</h1>
+    <h1>Multiplayer Squash Game</h1>
     <canvas id="squashGame" width="800" height="500"></canvas>
+    <div>
+        <button id="startGameBtn">Start Game</button>
+        <button id="serveBtn">Serve Ball</button>
+    </div>
+    <div class="instructions">
+        <h3>How to Play:</h3>
+        <p><strong>Left Player (Red):</strong> Use Arrow Up and Arrow Down keys</p>
+        <p><strong>Right Player (Blue):</strong> Use Arrow Up and Arrow Down keys</p>
+        <p>Players take turns hitting the ball against the front wall. If you miss, the opponent scores.</p>
+        <p>Only the player whose turn it is can hit the ball.</p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
 </body>
 
