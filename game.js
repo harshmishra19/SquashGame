@@ -1,72 +1,94 @@
+const socket = io();
 const canvas = document.getElementById("squashGame");
 const ctx = canvas.getContext("2d");
-const socket = io();
+const serveBtn = document.getElementById("serveBtn");
 
 let player = null;
-let opponent = null;
-let ball = { x: canvas.width / 2, y: canvas.height / 2, radius: 10, velocityX: 0, velocityY: 0 };
+let gameState = null;
 let gameStarted = false;
 
-const paddles = {
-    red: { x: 50, y: canvas.height / 2 - 50, width: 10, height: 100, color: "red" },
-    blue: { x: canvas.width - 60, y: canvas.height / 2 - 50, width: 10, height: 100, color: "blue" }
-};
-
-document.getElementById("startGame").addEventListener("click", () => {
-    socket.emit("playerReady");
-});
-
-// Receive player assignment
-socket.on("assignPlayer", (data) => {
-    player = data;
-    opponent = player === "red" ? "blue" : "red";
-});
-
-// Start game when both players are ready
-socket.on("startGame", () => {
-    gameStarted = true;
-    ball.velocityX = 4;
-    ball.velocityY = 3;
-});
-
-// Update game state
-socket.on("gameState", (gameState) => {
-    paddles.red.y = gameState.red.y;
-    paddles.blue.y = gameState.blue.y;
-    ball = gameState.ball;
-});
-
-// Move paddles
-document.addEventListener("keydown", (event) => {
-    if (!gameStarted || !player) return;
-
-    if (player === "red" && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
-        socket.emit("movePaddle", { direction: event.key });
-    }
-    if (player === "blue" && (event.key === "w" || event.key === "s")) {
-        socket.emit("movePaddle", { direction: event.key });
-    }
-});
-
-// Draw elements
+// Draw functions
 function drawRect(x, y, w, h, color) {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, w, h);
 }
 
-// Render game
-function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawRect(paddles.red.x, paddles.red.y, paddles.red.width, paddles.red.height, paddles.red.color);
-    drawRect(paddles.blue.x, paddles.blue.y, paddles.blue.width, paddles.blue.height, paddles.blue.color);
+function drawCircle(x, y, r, color) {
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "white";
+    ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
 }
 
-function gameLoop() {
-    render();
-    requestAnimationFrame(gameLoop);
+function drawText(text, x, y, color, size = "20px") {
+    ctx.fillStyle = color;
+    ctx.font = `${size} Arial`;
+    ctx.fillText(text, x, y);
 }
-gameLoop();
+
+// Socket listeners
+socket.on("playerType", (data) => {
+    player = data;
+    alert(`You are ${player === 'left' ? 'Left Player (Red)' : 'Right Player (Blue)'}`);
+});
+
+socket.on("gameState", (state) => {
+    gameState = state;
+    gameStarted = state.gameStarted;
+    drawGame();
+});
+
+// Draw game
+function drawGame() {
+    if (!gameState) return;
+
+    // Clear canvas
+    drawRect(0, 0, canvas.width, canvas.height, "black");
+
+    // Draw paddles (positioned next to each other on left)
+    drawRect(gameState.left.x, gameState.left.y, 10, 100, "red");
+    drawRect(gameState.right.x, gameState.right.y, 10, 100, "blue");
+
+    // Draw ball
+    drawCircle(gameState.ball.x, gameState.ball.y, gameState.ball.radius, "white");
+
+    // Draw front wall (right side)
+    drawRect(790, 0, 10, canvas.height, "white");
+
+    // Draw scores
+    drawText(`Left: ${gameState.left.score}`, 50, 30, "red");
+    drawText(`Right: ${gameState.right.score}`, 650, 30, "blue");
+
+    // Show turn indicator
+    drawText(`${gameState.turn === 'left' ? 'Left' : 'Right'} Player's Turn`, 350, 30, "white");
+
+    // Show waiting or serve messages
+    if (!gameState.gameStarted) {
+        drawText("Waiting for both players to start...", 200, 250, "yellow", "24px");
+    } else if (!gameState.gameActive) {
+        drawText(`${gameState.turn === 'left' ? 'Left' : 'Right'} Player to Serve`, 300, 250, "yellow", "24px");
+        serveBtn.style.display = "block";
+    } else {
+        serveBtn.style.display = "none";
+    }
+}
+
+// Event listeners
+document.addEventListener("keydown", (event) => {
+    if (!player || !gameState || !gameState.gameActive) return;
+
+    let move = { player, direction: event.key };
+    socket.emit("movePaddle", move);
+});
+
+document.getElementById("startGameBtn").addEventListener("click", () => {
+    socket.emit("startGame");
+});
+
+serveBtn.addEventListener("click", () => {
+    if (player === gameState?.turn) {
+        socket.emit("serveBall");
+    } else {
+        alert("Wait for your turn to serve!");
+    }
+});
